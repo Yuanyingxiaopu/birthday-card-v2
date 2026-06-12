@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+@theme {
+  --color-pink-50: #fff0f3;
+  --color-pink-100: #ffe0e8;
+  --color-pink-200: #ffb3cc;
+  --color-pink-300: #ff99bb;
+  --color-pink-400: #ff80a8;
+  --color-pink-500: #ff6b9d;
+  --color-pink-600: #e8527f;
+  --color-cream: #fff8f0;
+  --color-cream-dark: #fff0e0;
+  --font-display: 'ZCOOL KuaiLe', cursive;
+  --font-body: 'Noto Sans SC', sans-serif;
+}
+
+@layer base {
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: var(--font-body);
+    background: linear-gradient(135deg, var(--color-pink-50), var(--color-cream), var(--color-pink-100));
+    min-height: 100dvh;
+    color: #2d2d2d;
+    overflow-x: hidden;
+  }
+  input, button, textarea { font-family: inherit; }
+}
+
+@keyframes float-petal {
+  0% { transform: translateY(-10vh) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
+@keyframes balloon-float {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-15px) rotate(2deg); }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(255, 107, 157, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(255, 107, 157, 0.6); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 0; transform: scale(0); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out both;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+.petal {
+  position: fixed;
+  pointer-events: none;
+  z-index: 50;
+  animation: float-petal linear infinite;
+}
+
+.balloon {
+  animation: balloon-float 3s ease-in-out infinite;
+}
