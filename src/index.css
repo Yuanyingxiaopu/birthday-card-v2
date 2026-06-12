@@ -10,8 +10,8 @@
   --color-pink-600: #e8527f;
   --color-cream: #fff8f0;
   --color-cream-dark: #fff0e0;
-  --font-display: 'ZCOOL KuaiLe', cursive;
-  --font-body: 'Noto Sans SC', sans-serif;
+  --font-display: 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', system-ui, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', system-ui, sans-serif;
 }
 
 @layer base {

@@ -5,7 +5,7 @@ import FormPage from './pages/FormPage'
 import GeneratingPage from './pages/GeneratingPage'
 import PasswordPage from './pages/PasswordPage'
 import CardPage from './pages/CardPage'
-import ViewPage from './pages/ViewPage'
+import GreetPage from './pages/GreetPage'
 
 export default function App() {
   return (
@@ -17,7 +17,7 @@ export default function App() {
           <Route path="/generating" element={<GeneratingPage />} />
           <Route path="/card/:cardId" element={<CardPage />} />
           <Route path="/card/:cardId/verify" element={<PasswordPage />} />
-          <Route path="/card/:cardId/view" element={<ViewPage />} />
+          <Route path="/greet/:data" element={<GreetPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

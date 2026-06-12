@@ -1,4 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom'
+import { tryStartMusic } from '../components/BackgroundMusic'
 
 export default function HomePage() {
   const [searchParams] = useSearchParams()
@@ -29,6 +30,7 @@ export default function HomePage() {
       {/* CTA Button */}
       <Link
         to={token ? `/form?token=${token}` : '/form'}
+        onClick={tryStartMusic}
         className="animate-pulse-glow inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-pink-500 to-pink-400 text-white text-lg font-semibold rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 no-underline"
       >
         <span>✨</span>
