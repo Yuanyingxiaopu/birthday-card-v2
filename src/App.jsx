@@ -6,6 +6,7 @@ import GeneratingPage from './pages/GeneratingPage'
 import PasswordPage from './pages/PasswordPage'
 import CardPage from './pages/CardPage'
 import GreetPage from './pages/GreetPage'
+import AdminPage from './pages/AdminPage'
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
           <Route path="/card/:cardId" element={<CardPage />} />
           <Route path="/card/:cardId/verify" element={<PasswordPage />} />
           <Route path="/greet/:data" element={<GreetPage />} />
+          <Route path="/admin" element={<AdminPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

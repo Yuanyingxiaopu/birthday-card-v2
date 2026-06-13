@@ -110,3 +110,57 @@ export function deleteDraft(id) {
 export function clearDrafts() {
   localStorage.removeItem(DRAFT_KEY)
 }
+
+// === Access code (paywall) ===
+const ACCESS_CODES_KEY = 'access_codes'
+const ACCESS_VALID_DAYS = 60
+
+export function generateAccessCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+}
+
+export function generateAccessUrl(baseUrl, code) {
+  const url = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
+  return `${url}/?code=${code}`
+}
+
+function loadAccessCodes() {
+  try {
+    const raw = localStorage.getItem(ACCESS_CODES_KEY)
+    return raw ? JSON.parse(raw) : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveAccessCodes(codes) {
+  localStorage.setItem(ACCESS_CODES_KEY, JSON.stringify(codes))
+}
+
+export function activateCode(code) {
+  const codes = loadAccessCodes()
+  codes[code] = { activatedAt: Date.now() }
+  saveAccessCodes(codes)
+}
+
+export function isCodeValid(code) {
+  const codes = loadAccessCodes()
+  const entry = codes[code]
+  if (!entry || !entry.activatedAt) return false
+  const expiresAt = entry.activatedAt + ACCESS_VALID_DAYS * 24 * 60 * 60 * 1000
+  return Date.now() < expiresAt
+}
+
+export function getCodeRemainingDays(code) {
+  const codes = loadAccessCodes()
+  const entry = codes[code]
+  if (!entry || !entry.activatedAt) return 0
+  const remaining = entry.activatedAt + ACCESS_VALID_DAYS * 24 * 60 * 60 * 1000 - Date.now()
+  return remaining > 0 ? Math.ceil(remaining / (24 * 60 * 60 * 1000)) : 0
+}
+
+export function isCodeActivated(code) {
+  const codes = loadAccessCodes()
+  return !!codes[code]
+}

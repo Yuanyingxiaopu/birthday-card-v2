@@ -19,6 +19,10 @@ export default function FormPage() {
   const [theme, setTheme] = useState(loadTheme())
 
   useEffect(() => {
+    if (!sessionStorage.getItem('access_verified')) {
+      navigate('/', { replace: true })
+      return
+    }
     const latest = loadLatestDraft()
     if (latest && (latest.name || latest.birthday || latest.sender || latest.blessing)) {
       setForm(prev => ({ ...prev, name: latest.name || '', birthday: latest.birthday || '', sender: latest.sender || '', blessing: latest.blessing || '' }))
