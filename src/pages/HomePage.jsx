@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useSearchParams, useNavigate } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { tryStartMusic } from '../components/BackgroundMusic'
 import { activateCode, isCodeValid, isCodeActivated, getCodeRemainingDays } from '../lib/utils'
 
