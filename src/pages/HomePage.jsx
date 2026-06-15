@@ -1,78 +1,70 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { tryStartMusic } from '../components/BackgroundMusic'
-import { activateCode, isCodeValid, isCodeActivated, getCodeRemainingDays } from '../lib/utils'
+import { activateCode, isCodeValid, isCodeActivated, getCodeRemainingDays } from '../lib/supabase'
 
 export default function HomePage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const urlCode = searchParams.get('code')
 
-  const [inputCode, setInputCode] = useState('')
-  const [error, setError] = useState('')
-  const [verified, setVerified] = useState(false)
+  const [status, setStatus] = useState('loading') // loading | verified | expired | invalid
   const [remainingDays, setRemainingDays] = useState(0)
 
   useEffect(() => {
-    if (urlCode && isCodeValid(urlCode)) {
-      setRemainingDays(getCodeRemainingDays(urlCode))
-      setVerified(true)
-      sessionStorage.setItem('access_verified', 'true')
-      sessionStorage.setItem('access_code', urlCode)
-    }
-  }, [urlCode])
-
-  const handleVerify = () => {
-    const code = inputCode.trim().toUpperCase()
-    setError('')
-
-    if (!code) {
-      setError('请输入验证码')
-      return
-    }
-
-    // 验证码必须匹配 URL 中的 code（如果有）
-    if (urlCode && code !== urlCode.toUpperCase()) {
-      setError('验证码错误')
-      return
-    }
-
-    // 没有 URL code 时，检查是否已激活且有效
     if (!urlCode) {
-      if (!isCodeActivated(code)) {
-        setError('验证码无效')
-        return
-      }
-      if (!isCodeValid(code)) {
-        setError('验证码已过期，请联系卖家获取新验证码')
-        return
-      }
-    } else {
-      // 有 URL code，检查是否已过期
-      if (isCodeActivated(code) && !isCodeValid(code)) {
-        setError('验证码已过期，请联系卖家获取新验证码')
-        return
-      }
+      setStatus('invalid')
+      return
     }
+    const code = urlCode.toUpperCase()
+    let cancelled = false
 
-    activateCode(code)
-    sessionStorage.setItem('access_verified', 'true')
-    sessionStorage.setItem('access_code', code)
-    setVerified(true)
-    setRemainingDays(getCodeRemainingDays(code))
-  }
+    ;(async () => {
+      try {
+        const activated = await isCodeActivated(code)
+        if (!activated) {
+          await activateCode(code)
+        }
+
+        const valid = await isCodeValid(code)
+        if (cancelled) return
+
+        if (valid) {
+          const days = await getCodeRemainingDays(code)
+          if (cancelled) return
+          setRemainingDays(days)
+          setStatus('verified')
+          sessionStorage.setItem('access_verified', 'true')
+          sessionStorage.setItem('access_code', code)
+        } else {
+          setStatus('expired')
+        }
+      } catch (err) {
+        console.warn('激活码校验失败:', err)
+        if (!cancelled) setStatus('expired')
+      }
+    })()
+
+    return () => { cancelled = true }
+  }, [urlCode])
 
   const handleStart = () => {
     tryStartMusic()
     navigate('/form')
   }
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') handleVerify()
+  // 加载中
+  if (status === 'loading') {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
+        <span className="text-5xl mb-4 animate-bounce">🎂</span>
+        <p className="text-sm text-pink-400">正在加载...</p>
+      </div>
+    )
   }
 
   // 已验证：显示进入按钮
-  if (verified) {
+  if (status === 'verified') {
     return (
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 animate-fade-in-up">
         <div className="flex gap-6 mb-8">
@@ -87,7 +79,7 @@ export default function HomePage() {
         </h1>
 
         <p className="text-sm text-pink-300 mb-8 text-center">
-          验证已通过 · 剩余 {remainingDays} 天
+          有效期剩余 {remainingDays} 天
         </p>
 
         <button
@@ -115,47 +107,32 @@ export default function HomePage() {
     )
   }
 
-  // 未验证：显示验证码输入墙
+  // 链接过期
+  if (status === 'expired') {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 animate-fade-in-up">
+        <span className="text-5xl mb-6">😢</span>
+        <h1 className="text-2xl font-bold text-pink-600 mb-2 text-center"
+            style={{ fontFamily: 'var(--font-display)' }}>
+          链接已过期
+        </h1>
+        <p className="text-sm text-pink-400 text-center">
+          有效期已过，请联系卖家获取新链接
+        </p>
+      </div>
+    )
+  }
+
+  // 没有code参数或无效链接
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 animate-fade-in-up">
-      <div className="flex gap-4 mb-6">
-        <span className="text-4xl">🎂</span>
-      </div>
-
+      <span className="text-5xl mb-6">🎂</span>
       <h1 className="text-2xl md:text-3xl font-bold text-pink-600 mb-2 text-center"
           style={{ fontFamily: 'var(--font-display)' }}>
-        🎂 专属生日贺卡
+        专属生日贺卡
       </h1>
-
-      <p className="text-sm text-pink-400 mb-8 text-center">
-        请输入验证码开始使用
-      </p>
-
-      <div className="w-full max-w-xs space-y-4">
-        <input
-          type="text"
-          value={inputCode}
-          onChange={e => { setInputCode(e.target.value.toUpperCase()); setError('') }}
-          onKeyDown={handleKeyDown}
-          placeholder="请输入6位验证码"
-          maxLength={6}
-          className="w-full px-4 py-3 rounded-xl border-2 border-pink-200 bg-white focus:outline-none focus:border-pink-400 transition-all text-center text-lg tracking-[0.3em] font-mono"
-        />
-
-        {error && (
-          <p className="text-xs text-red-400 text-center">{error}</p>
-        )}
-
-        <button
-          onClick={handleVerify}
-          className="w-full py-3 bg-gradient-to-r from-pink-500 to-pink-400 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
-        >
-          验证
-        </button>
-      </div>
-
-      <p className="text-xs text-gray-400 mt-6 text-center">
-        没有验证码？请联系卖家获取
+      <p className="text-sm text-pink-400 text-center">
+        请通过有效链接访问
       </p>
     </div>
   )

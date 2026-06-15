@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { createCard, uploadPhoto } from '../lib/supabase'
+import { createCard, uploadPhoto, updateCard } from '../lib/supabase'
 import { generateToken, saveDraft, loadDrafts, loadLatestDraft, deleteDraft } from '../lib/utils'
 import { tryStartMusic } from '../components/BackgroundMusic'
 import { THEMES, saveTheme, loadTheme } from '../lib/theme'
@@ -68,7 +68,16 @@ export default function FormPage() {
       const password = birthMonth + birthDay
       const cardData = { token, name: form.name.trim(), solar_birthday: form.birthday, password, photo_url: null, sender: form.sender.trim() || '', blessing: form.blessing.trim() || '生日快乐！愿你岁岁平安，万事顺遂！', theme, status: 'pending' }
       const card = await createCard(cardData)
-      if (form.photo && card.id) { try { cardData.photo_url = await uploadPhoto(form.photo, card.id) } catch {} }
+      if (form.photo && card.id) {
+        try {
+          const photoUrl = await uploadPhoto(form.photo, card.id)
+          cardData.photo_url = photoUrl
+          // 把照片URL写回数据库，否则从数据库读的访问者（包括分享对象）看不到图
+          await updateCard(card.id, { photo_url: photoUrl })
+        } catch (err) {
+          console.warn('照片上传失败:', err)
+        }
+      }
       sessionStorage.setItem('card_data', JSON.stringify({ ...cardData, id: card.id }))
       navigate('/generating')
     } catch (err) { alert('提交失败，请重试: ' + err.message); setLoading(false) }

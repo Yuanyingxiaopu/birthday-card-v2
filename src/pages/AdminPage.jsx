@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { generateAccessCode, generateAccessUrl } from '../lib/utils'
+import { createAccessCodes } from '../lib/supabase'
 
 const ADMIN_PASSWORD = 'huangjia2026'
 const ADMIN_KEY = 'admin_codes'
@@ -12,6 +13,8 @@ export default function AdminPage() {
   const [count, setCount] = useState(5)
   const [codes, setCodes] = useState([])
   const [copiedIdx, setCopiedIdx] = useState(-1)
+  const [generating, setGenerating] = useState(false)
+  const [genError, setGenError] = useState('')
 
   useEffect(() => {
     if (sessionStorage.getItem('admin_authed') === 'true') setAuthed(true)
@@ -29,16 +32,26 @@ export default function AdminPage() {
     }
   }
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     const n = Math.min(Math.max(count, 1), 50)
-    const newCodes = []
-    for (let i = 0; i < n; i++) {
-      const code = generateAccessCode()
-      newCodes.push({ code, url: generateAccessUrl(BASE_URL, code), createdAt: new Date().toLocaleString('zh-CN') })
+    setGenerating(true)
+    setGenError('')
+    try {
+      const rawCodes = Array.from({ length: n }, () => generateAccessCode())
+      await createAccessCodes(rawCodes)
+      const newCodes = rawCodes.map(code => ({
+        code,
+        url: generateAccessUrl(BASE_URL, code),
+        createdAt: new Date().toLocaleString('zh-CN'),
+      }))
+      const updated = [...newCodes, ...codes]
+      setCodes(updated)
+      localStorage.setItem(ADMIN_KEY, JSON.stringify(updated))
+    } catch (err) {
+      setGenError('生成失败: ' + (err.message || '数据库错误，请确认 access_codes 表已创建'))
+    } finally {
+      setGenerating(false)
     }
-    const updated = [...newCodes, ...codes]
-    setCodes(updated)
-    localStorage.setItem(ADMIN_KEY, JSON.stringify(updated))
   }
 
   const handleCopy = async (url, idx) => {
@@ -59,7 +72,7 @@ export default function AdminPage() {
   }
 
   const handleCopyAll = async () => {
-    const text = codes.map((c, i) => `链接${i + 1}: ${c.url}\n验证码: ${c.code}`).join('\n\n')
+    const text = codes.map(c => c.url).join('\n')
     try {
       await navigator.clipboard.writeText(text)
     } catch {
@@ -72,23 +85,6 @@ export default function AdminPage() {
     }
     setCopiedIdx(-2)
     setTimeout(() => setCopiedIdx(-1), 1500)
-  }
-
-  const handleCopyCode = async (code, idx) => {
-    try {
-      await navigator.clipboard.writeText(code)
-      setCopiedIdx(idx + 100)
-      setTimeout(() => setCopiedIdx(-1), 1500)
-    } catch {
-      const ta = document.createElement('textarea')
-      ta.value = code
-      document.body.appendChild(ta)
-      ta.select()
-      document.execCommand('copy')
-      document.body.removeChild(ta)
-      setCopiedIdx(idx + 100)
-      setTimeout(() => setCopiedIdx(-1), 1500)
-    }
   }
 
   if (!authed) {
@@ -115,20 +111,21 @@ export default function AdminPage() {
           <label className="text-sm text-gray-600 whitespace-nowrap">生成数量</label>
           <input type="number" min="1" max="50" value={count} onChange={e => setCount(Number(e.target.value))}
             className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none" />
-          <button onClick={handleGenerate}
-            className="px-4 py-2 bg-pink-500 text-white text-sm rounded-lg hover:bg-pink-600 transition-colors whitespace-nowrap">
-            生成
+          <button onClick={handleGenerate} disabled={generating}
+            className="px-4 py-2 bg-pink-500 text-white text-sm rounded-lg hover:bg-pink-600 transition-colors whitespace-nowrap disabled:opacity-50">
+            {generating ? '生成中...' : '生成'}
           </button>
         </div>
+        {genError && <p className="text-xs text-red-500 mb-2">{genError}</p>}
         <p className="text-xs text-gray-400">链接格式：{BASE_URL}/?code=XXXXXX</p>
-        <p className="text-xs text-gray-400">有效期：用户首次验证后60天</p>
+        <p className="text-xs text-gray-400">有效期：用户首次访问后60天</p>
       </div>
 
       {codes.length > 0 && (
         <div className="flex justify-end mb-3">
           <button onClick={handleCopyAll}
             className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-lg hover:bg-gray-200 transition-colors">
-            {copiedIdx === -2 ? '已复制全部' : '复制全部链接+验证码'}
+            {copiedIdx === -2 ? '已复制全部' : '复制全部链接'}
           </button>
         </div>
       )}
@@ -139,19 +136,10 @@ export default function AdminPage() {
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-xs text-gray-400">#{i + 1} · {c.createdAt}</span>
             </div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs text-gray-500 whitespace-nowrap">验证码:</span>
-              <code className="text-sm font-mono font-bold text-pink-600 tracking-wider">{c.code}</code>
-              <button onClick={() => handleCopyCode(c.code, i)}
-                className="text-xs text-gray-400 hover:text-pink-500 ml-auto whitespace-nowrap">
-                {copiedIdx === i + 100 ? '已复制' : '复制验证码'}
-              </button>
-            </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500 whitespace-nowrap">链接:</span>
               <span className="text-xs text-gray-600 truncate flex-1">{c.url}</span>
               <button onClick={() => handleCopy(c.url, i)}
-                className="text-xs text-gray-400 hover:text-pink-500 whitespace-nowrap">
+                className="text-xs text-gray-400 hover:text-pink-500 whitespace-nowrap shrink-0">
                 {copiedIdx === i ? '已复制' : '复制链接'}
               </button>
             </div>
