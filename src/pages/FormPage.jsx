@@ -147,9 +147,10 @@ export default function FormPage() {
         {/* Photo */}
         <div>
           <label className="block text-sm font-medium mb-1.5" style={{ color: t.text }}>上传照片 <span style={{ color: t.primaryLight }}>(选填)</span></label>
+          <p className="text-xs mb-2" style={{ color: t.primaryLight }}>📐 建议使用 <span className="font-semibold">4:3 横图</span>（例如 800×600），避免显示时变形或留白</p>
           {preview ? (
-            <div className="relative rounded-xl overflow-hidden border-2" style={{ borderColor: t.border }}>
-              <img src={preview} alt="preview" className="w-full h-48 object-cover" />
+            <div className="relative rounded-xl overflow-hidden border-2 bg-black/5" style={{ borderColor: t.border }}>
+              <img src={preview} alt="preview" className="w-full max-h-72 object-contain" />
               <button type="button" onClick={() => { setPreview(null); setForm(p => ({ ...p, photo: null })) }}
                 className="absolute top-2 right-2 w-7 h-7 bg-black/40 text-white rounded-full flex items-center justify-center text-sm">✕</button>
             </div>

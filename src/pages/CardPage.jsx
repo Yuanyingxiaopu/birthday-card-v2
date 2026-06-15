@@ -124,8 +124,8 @@ export default function CardPage() {
         </div>
         {card.photo_url && (
           <div className={`px-6 mb-4 transition-all duration-700 delay-300 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-            <div className="rounded-2xl overflow-hidden shadow-lg border-2 border-white">
-              <img src={card.photo_url} alt="birthday" className="w-full h-48 object-cover" referrerPolicy="no-referrer" />
+            <div className="rounded-2xl overflow-hidden shadow-lg border-2 border-white bg-black/5">
+              <img src={card.photo_url} alt="birthday" className="w-full max-h-80 object-contain" referrerPolicy="no-referrer" />
             </div>
           </div>
         )}
